@@ -54,7 +54,7 @@ static int my_seq_show(struct seq_file *s, void *v) {
   struct pass *cursor = NULL;
 
   seq_printf(s, "Status: ");
-  switch(shuttle_status) {
+  switch(shuttle.status) {
     case OFFLINE:
       seq_printf(s, "OFFLINE\n");
       break;
@@ -73,10 +73,21 @@ static int my_seq_show(struct seq_file *s, void *v) {
   }
 
 
-  seq_printf(s, "Seats: %i used %i available\n", 0, 0);
-  seq_printf(s, "Passengers: %i (%i adult with luggage, %i adult without luggage, %i children)\n", 0, 0, 0, 0);
-  seq_printf(s, "Location: %i\n", 0);
-  seq_printf(s, "Destination: %i\n", 0);
+  seq_printf(s, "Seats: %i used %i available\n", shuttle.amtFilled/2 , 50 - shuttle.amtFilled/2);
+  
+  int pC=0, pA=0, pL=0, total=0;
+  
+	for (i=0; i<5; ++i) {
+		pC = shuttle.passengers[i][0];
+		pA = shuttle.passengers[i][1];
+		pL = shuttle.passengers[i][2];
+		total += shuttle.passengers[i][0] + shuttle.passengers[i][1] + shuttle.passengers[i][2];
+	}
+
+
+  seq_printf(s, "Passengers: %i (%i adult with luggage, %i adult without luggage, %i children)\n", pC, pA, pL, total);
+  seq_printf(s, "Location: %i\n", shuttle.pos+1);
+  seq_printf(s, "Destination: %i\n", shuttle.dest+1);
 
   for(i =0; i<5; ++i) {
     total_delivered += delivered[i];
@@ -85,10 +96,6 @@ static int my_seq_show(struct seq_file *s, void *v) {
   seq_printf(s, "Delivered: %i (%i adult with luggage, %i adult without luggage, %i children)\n", total_delivered, 0, 0, 0);
   seq_printf(s, "\n");
   for(i =0; i<5; ++i) {
-
-    if (terminal[i].type == 0) { q_childs++;  }
-    else if (terminal[i].type == 1) { q_adults++;  }
-    else if (terminal[i].type == 2) { q_adultsL++;  }
 
     if (terminal[i].next != NULL) {
       cursor = terminal[i].next;

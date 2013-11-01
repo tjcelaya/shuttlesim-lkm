@@ -53,7 +53,7 @@ void printStats(void) {
 
 	for(i = 0; i < 5; ++i)
 		printk( KERN_ALERT "d:%i   C %i A %i L %i\n", i, shuttle.passengers[i][0], shuttle.passengers[i][1], shuttle.passengers[i][2]);
-
+/*
 	printk( KERN_ALERT "=======STATS CALLED: QUEUE OUTPUT=======\n");
 	for(i = 0; i < 5; ++i) {
 		printk(KERN_ALERT "terminal[%i,%i: %i, %i\n", i, j, terminal[i].type, terminal[i].dest);
@@ -72,7 +72,7 @@ void printStats(void) {
 		}
 	}
 	printk( KERN_ALERT "==============END OUTPUT==============\n");
-
+*/
 }
 
 int simulate_shuttle(void *d) {
@@ -83,8 +83,13 @@ int simulate_shuttle(void *d) {
     struct pass *temp = NULL;
 
     printStats();
+	
+	int steps = 20;
 
-	while (kthread_should_stop()) {
+	while (steps--) {
+		
+		if (shuttle.dest != -1)
+			shuttle.pos = shuttle.dest;
 
 		if (shuttle.status != DEACTIVATING) shuttle.status = PARKED;  //park at the terminal
 		
@@ -92,19 +97,22 @@ int simulate_shuttle(void *d) {
 
 		if (shuttle.amtFilled > 0) {
 
-			if(passengers[shuttle.pos][0] > 0) {
+			if(shuttle.passengers[shuttle.pos][0] > 0) {
 				shuttle.amtFilled -= (shuttle.passengers[shuttle.pos][0] * CHILDSPC);
 				amtDropped += shuttle.passengers[shuttle.pos][0];
+				delivered[shuttle.pos] += shuttle.passengers[shuttle.pos][0];
 				shuttle.passengers[shuttle.pos][0] = 0;
 			}
-			if(passengers[shuttle.pos][1] > 0) {
+			if(shuttle.passengers[shuttle.pos][1] > 0) {
 				shuttle.amtFilled -= (shuttle.passengers[shuttle.pos][1] * ADULTSPC);
 				amtDropped += shuttle.passengers[shuttle.pos][1];
+				delivered[shuttle.pos] += shuttle.passengers[shuttle.pos][1];
 				shuttle.passengers[shuttle.pos][1] = 0;
 			}
-			if(passengers[shuttle.pos][2] > 0) {
+			if(shuttle.passengers[shuttle.pos][2] > 0) {
 				shuttle.amtFilled -= (shuttle.passengers[shuttle.pos][2] * LUGADSPC);
 				amtDropped += shuttle.passengers[shuttle.pos][2];
+				delivered[shuttle.pos] += shuttle.passengers[shuttle.pos][2];
 				shuttle.passengers[shuttle.pos][2] = 0;
 			}
 	
@@ -175,7 +183,7 @@ int simulate_shuttle(void *d) {
 		}
 
 		shuttle.dest = calculatePriority();
-
+		printk( KERN_ALERT "--------NEXT DESTINATION = %i ----------", shuttle.dest);
 		printStats();
 
 		if ( (amtDropped + amtPicked) > 4) 
