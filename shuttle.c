@@ -65,8 +65,6 @@ long m_start(void) {
 	int i, j;
 	printk( KERN_ALERT "Starting shuttle simulation\n");
 
-	shuttle_status = MOVING;
-
 	if (shuttle.status == OFFLINE) {
 		shuttle.status = PARKED;
 		shuttle.pos = INITIAL_TERMINAL;
@@ -79,6 +77,7 @@ long m_start(void) {
 	
 		return 0;
 	} else {
+		printk( KERN_ALERT "shuttle not offline");
 		return 1;
 	}
 }
@@ -106,18 +105,22 @@ long m_request(char p_type, int start_t, int end_t) {
 	start_t--;
 	end_t--;	
 
-	last_node = &(terminal[start_t]);
+	last_node = terminal[start_t].next;
 
-	if (last_node->next == NULL) {
-		last_node->type = n_type;
-		last_node->dest = end_t;
-		last_node->next = kmalloc(sizeof(struct pass), GFP_KERNEL);
+	printk( KERN_ALERT "checking if first addition\n");
+	if (last_node == NULL) {
+		
+		
+		printk( KERN_ALERT "first addition\n");
+		
+		terminal[start_t].next = kmalloc(sizeof(struct pass), GFP_KERNEL);
 
-		last_node->next->type = 9;
-		last_node->next->dest = 9;
-		last_node->next->next = NULL;
+		(terminal[start_t].next)->type = n_type;
+		(terminal[start_t].next)->dest = end_t;
+		(terminal[start_t].next)->next = NULL;
 		return 0;
 	}
+	printk( KERN_ALERT "it wasnt\n");
 
 	while (last_node->next != NULL)	{	
 		// printk( KERN_ALERT "--next is %p\n", last_node->next);
@@ -144,8 +147,8 @@ long m_stop(void) {
 	int i =0;
 	int j =0;
 	struct pass *last_node;
-	shuttle_status = DEACTIVATING;
-
+	kthread_stop(shuttle_thread);
+/*
 	printk( KERN_ALERT "=======STOP CALLED: QUEUE OUTPUT=======\n");
 	for(; i < 5; ++i) {
 		printk(KERN_ALERT "terminal[%i,%i: %i, %i\n", i, j, terminal[i].type, terminal[i].dest);
@@ -164,8 +167,7 @@ long m_stop(void) {
 		}
 	}
 	printk( KERN_ALERT "==============END OUTPUT==============\n");
-
-	// kthread_should_stop or some shit
+*/
 	return 0;
 }
 
@@ -183,9 +185,9 @@ int init_module(void) {
 	issue_request = m_request;
 	stop_shuttle = m_stop;
 
-	for(; i < 5; ++i) {
-		terminal[i].type = 9;
-		terminal[i].dest = 9;
+	for(i = 0; i < 5; ++i) {
+		terminal[i].type = -1;
+		terminal[i].dest = -1;
 		terminal[i].next = NULL;
 		delivered[i] = 0;
 	}
@@ -198,28 +200,12 @@ int init_module(void) {
  *
  */
 void cleanup_module(void) {
-	struct pass *node, *temp;
-	int i =0;
+//	struct pass *node, *temp;
+//	int i =0;
 	
 	start_shuttle = NULL;
 	issue_request = NULL;
 	stop_shuttle = NULL;
-
-
-	for(; i < 5; ++i) {
-		node = terminal[i].next;
-
-		if (node == NULL){
-			// printk(KERN_ALERT "next was null: %p", node);
-			continue;
-		} else {
-			while(node->next != NULL) {
-				temp = node;
-				node = node->next;
-				kfree(temp);
-			}
-		}
-	}
 
 	remove_proc_entry(PROC_NAME, NULL);
 
