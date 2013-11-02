@@ -48,9 +48,69 @@ static void my_seq_stop(struct seq_file *s, void *v) {
  *
  */
 static int my_seq_show(struct seq_file *s, void *v) {
-  loff_t *spos = (loff_t *) v;
+  // loff_t *spos = (loff_t *) v;
   
-  seq_printf(s, "%Ld\n", *spos);
+  int total_delivered = 0, i =0, q_adultsL=0, q_adults=0, q_childs=0;
+  struct pass* cursor = NULL;
+
+  seq_printf(s, "Status: ");
+  switch(shuttle_status) {
+    case OFFLINE:
+      seq_printf(s, "OFFLINE\n");
+      break;
+    case DEACTIVATING:
+      seq_printf(s, "DEACTIVATING\n");
+      break;
+    case MOVING:
+      seq_printf(s, "MOVING\n");
+      break;
+    case PARKED:
+      seq_printf(s, "PARKED\n");
+      break;
+    default:
+      seq_printf(s, "OFFLINE\n");
+      break;
+  }
+
+
+  seq_printf(s, "Seats: %i used %i available\n", 0, 0);
+  seq_printf(s, "Passengers: %i (%i adult with luggage, %i adult without luggage, %i children)\n", 0, 0, 0, 0);
+  seq_printf(s, "Location: %i\n", 0);
+  seq_printf(s, "Destination: %i\n", 0);
+
+  for(i =0; i<5; ++i) {
+    total_delivered += delivered[i];
+  }
+
+  seq_printf(s, "Delivered: %i (%i adult with luggage, %i adult without luggage, %i children)\n", total_delivered, 0, 0, 0);
+  seq_printf(s, "\n");
+  for(i =0; i<5; ++i) {
+
+    if (terminal[i].type == 'C') { q_childs++;  }
+    else if (terminal[i].type == 'A') { q_adults++;  }
+    else if (terminal[i].type == 'L') { q_adultsL++;  }
+
+    if (terminal[i].next != NULL) {
+      cursor = terminal[i].next;
+
+      while (cursor != NULL) {
+        if (cursor->type == 'C') { q_childs++;  }
+        else if (cursor->type == 'A') { q_adults++;  }
+        else if (cursor->type == 'L') { q_adultsL++;  }
+        cursor = cursor->next;
+      }
+
+    }
+    seq_printf(s, 
+      "Terminal %i: %i adult w/ luggage, %i adult w/o luggage, %i children in queue. %i passengers delivered so far\n",
+      i+1,
+      q_adultsL,
+      q_adults,
+      q_childs,
+      delivered[i]
+    );
+    q_childs = q_adults = q_adultsL = 0;
+  }
   return 0;
 }
 
@@ -73,10 +133,6 @@ static int my_open(struct inode *inode, struct file *file) {
   return seq_open(file, &my_seq_ops);
 };
 
-/**
- * This structure gather "function" that manage the /proc file
- *
- */
 static struct file_operations my_file_ops = {
   .owner   = THIS_MODULE,
   .open    = my_open,
@@ -84,5 +140,3 @@ static struct file_operations my_file_ops = {
   .llseek  = seq_lseek,
   .release = seq_release
 };
-
-
