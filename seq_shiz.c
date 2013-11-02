@@ -51,7 +51,7 @@ static int my_seq_show(struct seq_file *s, void *v) {
   // loff_t *spos = (loff_t *) v;
   
   int total_delivered = 0, i =0, q_adultsL=0, q_adults=0, q_childs=0;
-  struct pass* cursor = NULL;
+  struct pass *cursor = NULL;
 
   seq_printf(s, "Status: ");
   switch(shuttle_status) {
@@ -86,17 +86,17 @@ static int my_seq_show(struct seq_file *s, void *v) {
   seq_printf(s, "\n");
   for(i =0; i<5; ++i) {
 
-    if (terminal[i].type == 'C') { q_childs++;  }
-    else if (terminal[i].type == 'A') { q_adults++;  }
-    else if (terminal[i].type == 'L') { q_adultsL++;  }
+    if (terminal[i].type == 0) { q_childs++;  }
+    else if (terminal[i].type == 1) { q_adults++;  }
+    else if (terminal[i].type == 2) { q_adultsL++;  }
 
     if (terminal[i].next != NULL) {
       cursor = terminal[i].next;
 
       while (cursor != NULL) {
-        if (cursor->type == 'C') { q_childs++;  }
-        else if (cursor->type == 'A') { q_adults++;  }
-        else if (cursor->type == 'L') { q_adultsL++;  }
+        if (cursor->type == 0) { q_childs++;  }
+        else if (cursor->type == 1) { q_adults++;  }
+        else if (cursor->type == 2) { q_adultsL++;  }
         cursor = cursor->next;
       }
 
